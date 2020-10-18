@@ -1,4 +1,4 @@
-# Laragon http://localhost/ with list of all created website
+# Laragon http://localhost/ with list of all created websites
 
 Laragon index.php
 Author: Jaro Kurimsky
