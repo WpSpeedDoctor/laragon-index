@@ -8,10 +8,46 @@
  *    In http://localhost/ it displays all websites created in Laragon local WordPress environment
  *    If PHPMyAdmin is installed in folder phpmyadmin, it will add direct database access next for each website
  *
- *    Installation: Replace original index.php in laragon/www folder and change $domain for your local domain
  */
+    
+$domain = false;
 
-$domain = '.local';
+if (!$domain) {
+
+    $error_message = 'Laragon domain couldn\'t be detected, please edit index.php file and on the top change $domain = false; to $domain = ".yourdomain"';
+
+    $dir_slash = ( strpos(__DIR__, '\\' ) ? '\\' : '/');
+
+    $dir_largon_ini_array = explode( $dir_slash, __DIR__ );
+
+    $dir_largon_ini_array[count( $dir_largon_ini_array )-1] = 'usr';
+
+    $dir_largon_ini = implode( $dir_slash, $dir_largon_ini_array );
+
+    $dir_largon_ini_file = $dir_largon_ini.'/laragon.ini';
+
+    if (file_exists($dir_largon_ini_file)) {
+
+        $laragon_ini_file_content = file_get_contents( $dir_largon_ini_file );
+
+    } else {
+
+        die ( $error_message );        
+    }
+
+    preg_match_all('/HostnameFormat={name}(.*)/', $laragon_ini_file_content, $domain_match);
+
+    if (!isset($domain_match[1][0])) die ($error_message);
+
+    $domain = rtrim( $domain_match[1][0] );
+
+    if ( empty($domain) ) {
+
+        die ($error_message); 
+        
+    }
+
+}
 
 $server = ($_SERVER['SERVER_SOFTWARE']);
 
@@ -34,6 +70,8 @@ if (!empty($_GET['q']) and $_GET['q'] == 'info') {
     phpinfo(); 
     die;
 }
+
+
 
 if ( ! function_exists( 'get_websites_names_array' )){
     function get_websites_names_array( $folders ) {
