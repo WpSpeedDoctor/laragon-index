@@ -2,7 +2,7 @@
 
 /**
  * This is index.php for FlyEnv local WordPress/PHP environment.
- * It assumes you've made phpmyadmin accessible from http://phpmyadmin.test/
+ * It assumes you've made phpmyadmin accessible from http://phpmyadmin.local/, if you have .test raplace here or rename in FlyEnv section Site
  * and database name is domain without first level domain
  * for example mysite.local is connected to DB name `mysite`
  * Also is made for Apache webserver, make sure you adjust HOSTS_DIR for your installation
@@ -39,9 +39,20 @@ die;
 function get_domains(){
 	$domains = [];
 	foreach( scandir(HOSTS_DIR) as $domain_conf ){
-		if( $domain_conf === '.' || $domain_conf === '..' || $domain_conf === 'localhost.conf' ) continue;
-		$domain = str_replace('.conf','',$domain_conf);
+
+		if( $domain_conf === '.' || $domain_conf === '..' ) continue;
+		
+		$config = file_get_contents(HOSTS_DIR.$domain_conf);
+		if( str_contains($config,'ServerName localhost') ) continue;
+
+		$pieces = explode(' ',$config);
+
+		$alias_pos = array_search('ServerAlias',$pieces)+1;
+
+		$domain = $pieces[$alias_pos];
+
 		$group_letter = get_group_letter( $domain );
+		
 		$domains[$group_letter][] = $domain;
 	}
 	
@@ -130,6 +141,7 @@ function display_header(){
 	<div class="column-wrap title">
 		<div class="title" title="FlyEnv Local Sites">FlyEnv Local Sites</div>
 	</div>
+	</div>
 	<div class="info">
 		<a href="/index.php?action=phpinfo">PHP version: {$php_version} info here</a>
 		<a href="/index.php?action=extensionsinfo">PHP Extensions</a>
@@ -168,7 +180,7 @@ HTML;
 
 			$url = "http://{$site}/";
 			$login = "{$url}wp-login.php";
-			$db = $login ? "http://phpmyadmin.test/index.php?route=/database/structure&db={$db}" : '';
+			$db = $login ? "http://phpmyadmin.local/index.php?route=/database/structure&db={$db}" : '';
 
 			echo <<<HTML
 			<tr class="website">
@@ -225,12 +237,6 @@ function the_phpchecklist_info(){
 		[	'settings' => 'pcre.jit',
 			'expected_value' => '1'
 		],
-		[	'settings' => 'opcache.validate_timestamps',
-			'expected_value' => '1'
-		],
-		[	'settings' => 'opcache.revalidate_freq',
-			'expected_value' => '2'
-		],
 		[	'settings' => 'opcache.jit',
 			'expected_value' => 'tracing'
 		],
@@ -276,7 +282,9 @@ HTML;
 function the_php_info(){
 	echo '<div class="phpinfo">';
 	phpinfo();
-	echo '</div>';
+	echo '</div>Modules info:<br>';
+
+	// phpinfo(INFO_MODULES);
 }
 
 function the_extensions_info(){
